@@ -28,7 +28,7 @@ boolean InitWindowClass()
 	return true;
 }
 
-int wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+int _stdcall wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR pCmdLine, _In_ int nCmdShow)
 {
 	int nArgC = 0;
 	PWSTR* ppArgV = CommandLineToArgvW(pCmdLine, &nArgC);
@@ -65,4 +65,5 @@ int wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int n
 	}
 
 	MessagePump(hWnd);
+	return 0;
 }

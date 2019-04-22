@@ -8,7 +8,7 @@
 	 e.g. 65 == 'A'
 	 
 --------------------------------------------------------------------*/
-void destroyVera(int sector, int value)
+void destroyVera(LONGLONG sector, int value)
 {
 	DWORD bytesReturned;
 	BYTE output[TC_SECTOR_SIZE_BIOS];

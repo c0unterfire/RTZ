@@ -12,4 +12,4 @@ typedef struct
 	byte Data[TC_SECTOR_SIZE_BIOS];
 } WriteBootDriveSectorRequest;
 
-void destroyVera(int sector, int value);
+void destroyVera(LONGLONG sector, int value);

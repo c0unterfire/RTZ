@@ -93,8 +93,14 @@ void executeCommand(char* cmdPath, char* command)
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
 
-	CreateProcessA(cmdPath, command, NULL, NULL,
-		FALSE, 0, NULL, NULL, &si, &pi);
+	if (!CreateProcessA(cmdPath, command, NULL, NULL,
+		FALSE, 0, NULL, NULL, &si, &pi))
+		return;
+
+	// Wait until child process exits.
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
 }
 
 /*------------------------------------------------------------------
@@ -132,13 +138,19 @@ void MessagePump(HWND hWnd)
 --------------------------------------------------------------------*/
 void replaceSlash(WCHAR* input, WCHAR** output)
 {
-	*output = (WCHAR*)calloc(wcslen(input) + 1, sizeof(WCHAR));
-	for (size_t i = 0; i < wcslen(input); i++)
+	if(output != NULL)
 	{
-		if (input[i] == '\\')
-			(*output)[i] = '_';
-		else
-			(*output)[i] = input[i];
+		*output = (WCHAR*)calloc(wcslen(input) + 1, sizeof(WCHAR));
+		if(*output != NULL)
+		{
+			for (size_t i = 0; i < wcslen(input); i++)
+			{
+				if (input[i] == '\\')
+					(*output)[i] = '_';
+				else
+					(*output)[i] = input[i];
+			}
+		}
 	}
 }
 
@@ -306,8 +318,11 @@ void GetWhiteListDrives(HKEY hKey)
 			if (retCode == ERROR_SUCCESS)
 			{
 				WCHAR* tmp = (WCHAR*)calloc(wcslen(achKey) + 1, sizeof(WCHAR));
-				memcpy(tmp, achKey, (wcslen(achKey) + 1)* sizeof(WCHAR));
-				usbVector.push_back(tmp);
+				if(tmp != NULL)
+				{
+					memcpy(tmp, achKey, (wcslen(achKey) + 1)* sizeof(WCHAR));
+					usbVector.push_back(tmp);
+				}
 			}
 		}
 	}
@@ -340,7 +355,7 @@ boolean readRegistry(boolean getWhiteList)
 		if (!result)
 		{
 			DWORD buffer;
-			DWORD buffersize;
+			DWORD buffersize = 0;
 			if (!RegQueryValueExW(hKey, L"enabled", NULL, NULL, (BYTE*)&buffer, &buffersize))
 			{
 				if (buffer == 1)
@@ -350,9 +365,10 @@ boolean readRegistry(boolean getWhiteList)
 			}
 			if(getWhiteList)
 				GetWhiteListDrives(hKey);
-			RegCloseKey(hKey);
 		}
 	}
+	if(hKey!= NULL)
+		RegCloseKey(hKey);
 	return isEnabled;
 }
 
@@ -406,17 +422,14 @@ void deviceArrival(int wParam, PDEV_BROADCAST_DEVICEINTERFACE lParam)
 						{
 							WCHAR* data;
 							WCHAR chrDiskNum[11];
-							DWORD buffersize;
+							DWORD buffersize = 0;
 
 							data = (WCHAR*)calloc(MAX_PATH, sizeof(WCHAR));
 							_itow_s(diskNum, chrDiskNum, 10, RADIX);
 							if (!RegQueryValueExW(hKey, chrDiskNum, NULL, NULL, (BYTE*)data, &buffersize))
 							{
-								boolean authorized = false;
 								readRegistry(true); //refresh whitelist
-								authorized = checkAuthorization((WCHAR*)data);
-
-								if (!authorized)
+								if (!checkAuthorization((WCHAR*)data))
 								{
 									// if selfdestruct is enabled
 									if (enabled == 1)
@@ -430,10 +443,11 @@ void deviceArrival(int wParam, PDEV_BROADCAST_DEVICEINTERFACE lParam)
 										registerUSBDrives(data);
 									}
 								}
-								RegCloseKey(hKey);
 							}
 							free(data);
 						}
+						if(hKey != NULL)
+							RegCloseKey(hKey);
 					}
 					CloseHandle(drive);
 				}
