@@ -355,7 +355,7 @@ boolean readRegistry(boolean getWhiteList)
 		if (!result)
 		{
 			DWORD buffer;
-			DWORD buffersize = 0;
+			DWORD buffersize = 10;
 			if (!RegQueryValueExW(hKey, L"enabled", NULL, NULL, (BYTE*)&buffer, &buffersize))
 			{
 				if (buffer == 1)
@@ -422,7 +422,7 @@ void deviceArrival(int wParam, PDEV_BROADCAST_DEVICEINTERFACE lParam)
 						{
 							WCHAR* data;
 							WCHAR chrDiskNum[11];
-							DWORD buffersize = 0;
+							DWORD buffersize;
 
 							data = (WCHAR*)calloc(MAX_PATH, sizeof(WCHAR));
 							_itow_s(diskNum, chrDiskNum, 10, RADIX);
